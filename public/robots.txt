@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /
+
+# 私域作品集：请勿建立搜索索引。

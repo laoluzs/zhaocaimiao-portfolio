@@ -1,37 +1,745 @@
-'use client';
-import { useEffect, useRef, useState } from 'react';
-const projects=[
- {id:'01',slug:'kids',title:'儿童乐园',en:'KIDS PLAYGROUND',desc:'明快色彩与趣味装置构建儿童主题直播场景',images:['01.png','02.png','03.png','04.png','05.png','06.png']},
- {id:'02',slug:'water',title:'夏日户外玩水',en:'SUMMER WATER FUN',desc:'用清凉蓝调与户外氛围呈现夏季活动视觉',images:['01.png','02.png','03.png','04.png','05.png','06.png']},
- {id:'03',slug:'yellow',title:'黄色主题',en:'YELLOW CAMPAIGN',desc:'高饱和黄色系统贯穿空间、主图与延展物料',images:['01.png','02.png','03.png','04.png','05.png','06.png']}
-];
-function ProjectSlider({project}:{project:typeof projects[number]}){
- const [active,setActive]=useState(0);const startX=useRef(0);const didSwipe=useRef(false);const total=project.images.length;
- const go=(n:number)=>setActive((n+total)%total);
- return <article id={`case-${project.slug}`} className="project-slider" aria-label={`${project.title}案例轮播`}>
-  <header className="project-head"><div><small>{project.id} / 03</small><h3>{project.title}</h3><span>{project.en}</span></div><p>{project.desc}</p><div className="project-count"><b>{String(active+1).padStart(2,'0')}</b><i>/</i><span>{String(total).padStart(2,'0')}</span></div></header>
-  <div className="slider-viewport book-viewport" role="button" tabIndex={0} aria-label="点击翻到下一张" onClick={()=>{if(!didSwipe.current)go(active+1);didSwipe.current=false}} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go(active+1)}}} onTouchStart={e=>{startX.current=e.touches[0].clientX;didSwipe.current=false}} onTouchEnd={e=>{const d=e.changedTouches[0].clientX-startX.current;if(Math.abs(d)>45){didSwipe.current=true;go(active+(d<0?1:-1))}}}>
-   <div className="slider-track book-track">{project.images.map((img,i)=><figure key={img} className={i===active?"active":i<active?"before":"after"} aria-hidden={i!==active}><img src={`/projects/${project.slug}/${img}`} alt={`${project.title}视效图 ${i+1}`} loading={i<2?"eager":"lazy"}/><figcaption><span>{String(i+1).padStart(2,"0")}</span><small>VISUAL DESIGN / 2026</small></figcaption></figure>)}</div>
-   <button className="slider-arrow prev" onClick={e=>{e.stopPropagation();go(active-1)}} aria-label="上一张">←</button><button className="slider-arrow next" onClick={e=>{e.stopPropagation();go(active+1)}} aria-label="下一张">→</button>
-  </div>
-  <div className="slider-nav"><div className="progress-tabs">{project.images.map((_,i)=><button key={i} className={i===active?'active':''} onClick={()=>setActive(i)} aria-label={`跳转到第 ${i+1} 张`}><i/><span>{String(i+1).padStart(2,'0')}</span></button>)}</div><span>拖动 / 点击快速定位</span></div>
- </article>
+"use client";
+
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
+import {
+  projectImagePath,
+  projects,
+  type PortfolioProject,
+} from "./portfolio-data";
+
+type LightboxState = { project: PortfolioProject; index: number } | null;
+
+type ResponsiveProjectImageProps = {
+  project: PortfolioProject;
+  image: string;
+  alt: string;
+  eager?: boolean;
+  sizes?: string;
+  onClick?: () => void;
+};
+
+function ResponsiveProjectImage({
+  project,
+  image,
+  alt,
+  eager = false,
+  sizes = "(max-width: 980px) 100vw, 33vw",
+  onClick,
+}: ResponsiveProjectImageProps) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className={`project-image ${loaded ? "is-loaded" : "is-loading"}`}>
+      <picture>
+        <source
+          type="image/avif"
+          srcSet={`${projectImagePath(project, image, "avif", 500)} 500w, ${projectImagePath(project, image, "avif", 1000)} 1000w`}
+          sizes={sizes}
+        />
+        <source
+          type="image/webp"
+          srcSet={`${projectImagePath(project, image, "webp", 500)} 500w, ${projectImagePath(project, image, "webp", 1000)} 1000w`}
+          sizes={sizes}
+        />
+        {/* The original PNG remains the compatibility fallback. */}
+        <img
+          src={projectImagePath(project, image)}
+          width={1000}
+          height={2000}
+          alt={alt}
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : "auto"}
+          decoding="async"
+          draggable={false}
+          onLoad={() => setLoaded(true)}
+          onClick={onClick}
+          onContextMenu={(event) => event.preventDefault()}
+        />
+      </picture>
+      <span className="image-watermark" aria-hidden="true">
+        招财猫 · LUCKY CAT DESIGN
+      </span>
+    </div>
+  );
 }
-export default function Home(){
- useEffect(()=>{const move=(e:MouseEvent)=>{document.documentElement.style.setProperty('--mx',`${(e.clientX/innerWidth-.5)*18}px`);document.documentElement.style.setProperty('--my',`${(e.clientY/innerHeight-.5)*14}px`)};addEventListener('mousemove',move);return()=>removeEventListener('mousemove',move)},[]);
- return <main>
-  <header className="nav"><a className="brand" href="#top"><b>招财猫</b><small>LUCKY CAT DESIGN</small></a><nav><a href="#work">作品</a><a href="#about">关于</a><a href="#contact">联系</a></nav><small>PORTFOLIO / 2026</small></header>
-  <section className="hero hero-v2" id="top">
-   <div className="copy"><label>用设计赋能直播 · 让视觉驱动转化　✦</label><h1>直播间设计<br/>视觉全案专家</h1><i className="signature">Zhaocaimiao</i><p>专注直播间视觉策略与场景打造<br/>从设计到落地，助力品牌提升转化与停留</p><div><a className="btn" href="#work">查看案例　→</a><a className="service-btn" href="#about">了解服务</a></div><div className="hero-stats"><span><b>60+</b>直播间设计</span><span><b>18+</b>品牌合作</span><span><b>100+</b>项目落地</span><span><b>5年+</b>行业经验</span></div></div>
-   <div className="orbit"><i/><i/><i/></div>
-   <div className="hero-person"><div className="video-sequence"><video className="hero-video" autoPlay muted loop playsInline preload="metadata" poster="/hero-frame-6.png" aria-label="招财猫女性视觉设计师动态展示"><source src="/hero-character.mp4" type="video/mp4"/></video></div><span className="name-tag">招财设计喵　✿</span><div className="video-status"><i/><span>PLAYING</span></div></div>
-   <div className="float-cards"><a className="float-card c1" href="#case-kids"><small>01</small><b>儿童乐园</b><em>KIDS PLAYGROUND</em><span>KIDS</span></a><a className="float-card c2" href="#case-water"><small>02</small><b>夏日户外玩水</b><em>SUMMER WATER FUN</em><span>WATER</span></a><a className="float-card c3" href="#case-yellow"><small>03</small><b>黄色主题</b><em>YELLOW CAMPAIGN</em><span>YELLOW</span></a></div>
-   <aside className="process"><span>◎<b>视觉策略</b><small>STRATEGY</small></span><i/><span>◇<b>全案落地</b><small>IMPLEMENTATION</small></span><i/><span>↗<b>高效转化</b><small>CONVERSION</small></span></aside>
-   <div className="skillbar"><span>▣<small>直播间设计</small></span><span>▧<small>主图设计</small></span><span>▤<small>KT板设计</small></span><span>▥<small>详情页设计</small></span><span>◇<small>3D场景设计</small></span><span>▷<small>视频脚本</small></span></div>
-  </section>
-  <section className="statement" id="about"><p>不只装饰一个空间，<br/>而是设计一场<span>让品牌被记住</span>的直播。</p><div className="stats"><div><b>60<sup>+</sup></b><small>落地直播间</small></div><div><b>18</b><small>合作品牌</small></div><div><b>06</b><small>服务品类</small></div></div></section>
-  <section className="work work-v2" id="work"><header><div><small>SELECTED WORK</small><h2>精选案例</h2></div><p>三个主体视觉项目，每组均可独立滑动浏览。</p></header><div className="project-list">{projects.map(project=><ProjectSlider key={project.slug} project={project}/>)}</div></section>
-  <section className="services"><div><small>SERVICE SCOPE</small><h2>从直播间出发，<br/>向每一个触点延展。</h2></div><ol><li><b>01</b><span>直播间视觉设计</span><em>场景 / 贴片 / 氛围 / 导播视觉</em></li><li><b>02</b><span>电商主图设计</span><em>产品主图 / 详情页 / 活动页</em></li><li><b>03</b><span>品牌物料延展</span><em>KT板 / 海报 / 展架 / 包装</em></li><li><b>04</b><span>视觉策略与统筹</span><em>风格定位 / 视觉规范 / 长期服务</em></li></ol></section>
-  <footer className="contact" id="contact"><h2>有一个直播间，<br/>想让它<span>不一样？</span></h2><a href="mailto:hello@fortunecat.design">开始合作　↗</a><div><span>招财猫视觉设计</span><span>WECHAT · REDBOOK · EMAIL</span><span>© 2026</span></div></footer>
- </main>
+
+function getStoredSlide(slug: string, total: number) {
+  if (typeof window === "undefined") return 0;
+  const hashMatch = window.location.hash.match(
+    new RegExp(`^#case-${slug}-(\\d+)$`),
+  );
+  if (hashMatch) {
+    return Math.min(Math.max(Number(hashMatch[1]) - 1, 0), total - 1);
+  }
+  const stored = Number(window.sessionStorage.getItem(`portfolio:${slug}:slide`));
+  return Number.isInteger(stored) && stored >= 0 && stored < total ? stored : 0;
+}
+
+async function copyToClipboard(value: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    const input = document.createElement("textarea");
+    input.value = value;
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand("copy");
+    input.remove();
+  }
+}
+function ProjectSlider({
+  project,
+  projectIndex,
+  onOpen,
+}: {
+  project: PortfolioProject;
+  projectIndex: number;
+  onOpen: (project: PortfolioProject, index: number) => void;
+}) {
+  const total = project.images.length;
+  const previousProject = projects[(projectIndex - 1 + projects.length) % projects.length];
+  const nextProject = projects[(projectIndex + 1) % projects.length];
+  const [active, setActive] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const startX = useRef(0);
+  const didSwipe = useRef(false);
+
+  useEffect(() => {
+    const savedSlide = getStoredSlide(project.slug, total);
+    const frame = window.requestAnimationFrame(() => setActive(savedSlide));
+    return () => window.cancelAnimationFrame(frame);
+  }, [project.slug, total]);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(`portfolio:${project.slug}:slide`, String(active));
+    const nextIndex = (active + 1) % total;
+    const preload = new Image();
+    preload.src = projectImagePath(
+      project,
+      project.images[nextIndex],
+      "webp",
+      1000,
+    );
+  }, [active, project, total]);
+
+  const go = (next: number) => setActive((next + total) % total);
+
+  const shareCurrent = async () => {
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}#case-${project.slug}-${active + 1}`;
+    window.history.replaceState(null, "", `#case-${project.slug}-${active + 1}`);
+    await copyToClipboard(url);
+
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
+  const onViewportKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      go(active - 1);
+    }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      go(active + 1);
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onOpen(project, active);
+    }
+  };
+
+  const onTouchStart = (event: ReactTouchEvent) => {
+    startX.current = event.touches[0].clientX;
+    didSwipe.current = false;
+  };
+
+  const onTouchEnd = (event: ReactTouchEvent) => {
+    const distance = event.changedTouches[0].clientX - startX.current;
+    if (Math.abs(distance) > 45) {
+      didSwipe.current = true;
+      go(active + (distance < 0 ? 1 : -1));
+    }
+  };
+
+  return (
+    <article
+      id={`case-${project.slug}`}
+      className="project-card"
+      aria-labelledby={`case-${project.slug}-title`}
+    >
+      <header className="project-head">
+        <div>
+          <small>
+            {project.id} / {String(projects.length).padStart(2, "0")}
+          </small>
+          <h3 id={`case-${project.slug}-title`}>{project.title}</h3>
+          <span>{project.en}</span>
+        </div>
+        <div className="project-count" aria-live="polite">
+          <b>{String(active + 1).padStart(2, "0")}</b>
+          <i>/</i>
+          <span>{String(total).padStart(2, "0")}</span>
+        </div>
+      </header>
+
+      <div
+        className="project-stage"
+        role="group"
+        tabIndex={0}
+        aria-label={`${project.title}，第 ${active + 1} 张，共 ${total} 张。按回车查看大图，使用左右方向键切换。`}
+        onKeyDown={onViewportKeyDown}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <figure key={`${project.slug}-${active}`} className="active">
+          <ResponsiveProjectImage
+            project={project}
+            image={project.images[active]}
+            alt={`${project.title}视觉设计效果图 ${active + 1}`}
+            eager={projectIndex === 0 && active === 0}
+            onClick={() => {
+              if (!didSwipe.current) onOpen(project, active);
+              didSwipe.current = false;
+            }}
+          />
+          <figcaption>
+            <span>{String(active + 1).padStart(2, "0")}</span>
+            <small>VISUAL DESIGN / {project.year}</small>
+          </figcaption>
+        </figure>
+
+        <button
+          type="button"
+          className="stage-arrow prev"
+          onClick={() => go(active - 1)}
+          aria-label={`${project.title}上一张`}
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          className="stage-arrow next"
+          onClick={() => go(active + 1)}
+          aria-label={`${project.title}下一张`}
+        >
+          →
+        </button>
+        <button
+          type="button"
+          className="view-large"
+          onClick={() => onOpen(project, active)}
+        >
+          查看大图 ↗
+        </button>
+      </div>
+
+      <div className="thumbnail-nav" aria-label={`${project.title}图片导航`}>
+        {project.images.map((image, index) => (
+          <button
+            key={image}
+            type="button"
+            className={index === active ? "active" : ""}
+            onClick={() => setActive(index)}
+            aria-label={`查看第 ${index + 1} 张`}
+            aria-current={index === active ? "true" : undefined}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={projectImagePath(project, image, "webp", 500)}
+              width={500}
+              height={1000}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+              alt=""
+            />
+            <span>{String(index + 1).padStart(2, "0")}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className="project-story">
+        <p>{project.summary}</p>
+        <dl>
+          <div>
+            <dt>项目类型</dt>
+            <dd>{project.category}</dd>
+          </div>
+          <div>
+            <dt>服务内容</dt>
+            <dd>{project.services.join(" / ")}</dd>
+          </div>
+          <div>
+            <dt>设计目标</dt>
+            <dd>{project.goal}</dd>
+          </div>
+        </dl>
+        <div className="project-actions">
+          <button type="button" onClick={shareCurrent}>
+            {copied ? "链接已复制 ✓" : "复制当前案例链接"}
+          </button>
+          <div className="highlight-tags" aria-label="设计亮点">
+            {project.highlights.map((highlight) => (
+              <span key={highlight}>{highlight}</span>
+            ))}
+          </div>
+          <nav className="project-pagination" aria-label="案例切换">
+            <a href={`#case-${previousProject.slug}`}>← {previousProject.title}</a>
+            <a href={`#case-${nextProject.slug}`}>{nextProject.title} →</a>
+          </nav>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function Lightbox({
+  value,
+  onChange,
+  onClose,
+}: {
+  value: NonNullable<LightboxState>;
+  onChange: (index: number) => void;
+  onClose: () => void;
+}) {
+  const { project, index } = value;
+  const [zoom, setZoom] = useState(1);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const touchStartX = useRef(0);
+  const total = project.images.length;
+
+  const go = (next: number) => {
+    setZoom(1);
+    onChange((next + total) % total);
+  };
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowLeft") go(index - 1);
+      if (event.key === "ArrowRight") go(index + 1);
+      if (event.key === "Tab") {
+        const controls = Array.from(
+          document.querySelectorAll<HTMLButtonElement>(".lightbox button:not(:disabled)"),
+        );
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  });
+
+  return (
+    <div
+      className="lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${project.title}全屏作品浏览`}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      onTouchStart={(event) => {
+        touchStartX.current = event.touches[0].clientX;
+      }}
+      onTouchEnd={(event) => {
+        const distance = event.changedTouches[0].clientX - touchStartX.current;
+        if (Math.abs(distance) > 55) go(index + (distance < 0 ? 1 : -1));
+      }}
+    >
+      <header className="lightbox-bar">
+        <div>
+          <small>{project.en}</small>
+          <b>{project.title}</b>
+        </div>
+        <div className="lightbox-tools">
+          <button
+            type="button"
+            onClick={() => setZoom((current) => Math.max(1, current - 0.5))}
+            disabled={zoom <= 1}
+            aria-label="缩小图片"
+          >
+            −
+          </button>
+          <span>{Math.round(zoom * 100)}%</span>
+          <button
+            type="button"
+            onClick={() => setZoom((current) => Math.min(3, current + 0.5))}
+            disabled={zoom >= 3}
+            aria-label="放大图片"
+          >
+            ＋
+          </button>
+          <button
+            ref={closeRef}
+            type="button"
+            className="lightbox-close"
+            onClick={onClose}
+            aria-label="关闭全屏浏览"
+          >
+            关闭 ×
+          </button>
+        </div>
+      </header>
+
+      <div className={`lightbox-image ${zoom > 1 ? "is-zoomed" : ""}`}>
+        <div style={{ transform: `scale(${zoom})` }}>
+          <ResponsiveProjectImage
+            project={project}
+            image={project.images[index]}
+            alt={`${project.title}全屏效果图 ${index + 1}`}
+            eager
+            sizes="96vw"
+          />
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="lightbox-arrow prev"
+        onClick={() => go(index - 1)}
+        aria-label="上一张大图"
+      >
+        ←
+      </button>
+      <button
+        type="button"
+        className="lightbox-arrow next"
+        onClick={() => go(index + 1)}
+        aria-label="下一张大图"
+      >
+        →
+      </button>
+      <footer className="lightbox-footer">
+        <span>
+          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+        </span>
+        <small>左右滑动或使用方向键切换 · ESC 退出</small>
+      </footer>
+    </div>
+  );
+}
+
+export default function Home() {
+  const [lightbox, setLightbox] = useState<LightboxState>(null);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(true);
+  const [portfolioCopied, setPortfolioCopied] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const lightboxTrigger = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (reducedMotion.matches || saveData || window.innerWidth <= 800) {
+      videoRef.current?.pause();
+    } else {
+      videoRef.current?.play().catch(() => setVideoPlaying(false));
+    }
+    const finePointer = window.matchMedia("(pointer: fine)");
+    if (!finePointer.matches || reducedMotion.matches) return;
+    const move = (event: MouseEvent) => {
+      document.documentElement.style.setProperty(
+        "--mx",
+        `${(event.clientX / window.innerWidth - 0.5) * 16}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--my",
+        `${(event.clientY / window.innerHeight - 0.5) * 12}px`,
+      );
+    };
+    window.addEventListener("mousemove", move, { passive: true });
+    return () => window.removeEventListener("mousemove", move);
+  }, []);
+
+  useEffect(() => {
+    if (!window.location.hash) {
+      const savedScroll = Number(window.sessionStorage.getItem("portfolio:scrollY"));
+      if (Number.isFinite(savedScroll) && savedScroll > 0) {
+        window.requestAnimationFrame(() => window.scrollTo({ top: savedScroll }));
+      }
+    }
+    const rememberScroll = () => {
+      window.sessionStorage.setItem("portfolio:scrollY", String(window.scrollY));
+    };
+    window.addEventListener("pagehide", rememberScroll);
+    return () => window.removeEventListener("pagehide", rememberScroll);
+  }, []);
+
+  const openLightbox = (project: PortfolioProject, index: number) => {
+    lightboxTrigger.current = document.activeElement as HTMLElement;
+    window.history.replaceState(null, "", `#case-${project.slug}-${index + 1}`);
+    setLightbox({ project, index });
+  };
+
+  const closeLightbox = () => {
+    setLightbox(null);
+    window.setTimeout(() => lightboxTrigger.current?.focus(), 0);
+  };
+
+  const toggleVideo = async () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) await videoRef.current.play();
+    else videoRef.current.pause();
+  };
+
+  const copyPortfolioLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}`;
+    await copyToClipboard(url);
+    setPortfolioCopied(true);
+    window.setTimeout(() => setPortfolioCopied(false), 1800);
+  };
+
+  return (
+    <main>
+      <a className="skip-link" href="#work">
+        跳到作品
+      </a>
+
+      <header className="site-nav">
+        <a className="brand" href="#top" aria-label="招财猫作品集首页">
+          <b>招财猫</b>
+          <small>LUCKY CAT DESIGN</small>
+        </a>
+        <nav aria-label="主要导航">
+          <a href="#work">作品</a>
+          <a href="#about">关于</a>
+          <a href="#scope">服务范围</a>
+        </nav>
+        <small>PRIVATE PORTFOLIO / 2026</small>
+      </header>
+
+      <section className="hero" id="top" aria-labelledby="hero-title">
+        <div className="hero-media" aria-hidden="true">
+          <video
+            ref={videoRef}
+            className="hero-video"
+            muted={videoMuted}
+            loop
+            playsInline
+            preload="metadata"
+            poster="/hero-poster.webp"
+            onPlay={() => setVideoPlaying(true)}
+            onPause={() => setVideoPlaying(false)}
+          >
+            <source src="/hero-character.mp4" type="video/mp4" />
+          </video>
+        </div>
+        <div className="hero-shade" />
+
+        <div className="hero-copy">
+          <p className="eyebrow">用设计赋能直播 · 让视觉留下记忆　✦</p>
+          <h1 id="hero-title">
+            直播间设计
+            <br />
+            视觉全案作品集
+          </h1>
+          <i className="signature">Zhaocaimiao</i>
+          <p className="hero-intro">
+            专注直播间视觉策略与场景打造
+            <br />
+            从空间到画面，完整呈现每一次设计落地
+          </p>
+          <div className="hero-actions">
+            <a className="primary-button" href="#work">
+              浏览精选案例　↓
+            </a>
+            <a className="secondary-button" href="#about">
+              了解设计方法
+            </a>
+          </div>
+          <div className="hero-stats" aria-label="项目数据">
+            <span>
+              <b>60+</b>直播间设计
+            </span>
+            <span>
+              <b>18+</b>品牌合作
+            </span>
+            <span>
+              <b>100+</b>项目落地
+            </span>
+            <span>
+              <b>5年+</b>行业经验
+            </span>
+          </div>
+        </div>
+
+        <div className="case-shortcuts" aria-label="精选案例快捷入口">
+          {projects.map((project) => (
+            <a key={project.slug} href={`#case-${project.slug}`}>
+              <small>{project.id}</small>
+              <b>{project.title}</b>
+              <span>{project.en}</span>
+            </a>
+          ))}
+        </div>
+
+        <div className="hero-process" aria-label="设计流程">
+          <span>
+            <i>◎</i>
+            <b>视觉策略</b>
+          </span>
+          <em />
+          <span>
+            <i>◇</i>
+            <b>空间设计</b>
+          </span>
+          <em />
+          <span>
+            <i>↗</i>
+            <b>完整落地</b>
+          </span>
+        </div>
+
+        <div className="video-controls" aria-label="首页视频控制">
+          <button type="button" onClick={toggleVideo}>
+            {videoPlaying ? "暂停" : "播放"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setVideoMuted((current) => !current)}
+          >
+            {videoMuted ? "开启声音" : "静音"}
+          </button>
+          <span aria-live="polite">{videoPlaying ? "PLAYING" : "PAUSED"}</span>
+        </div>
+      </section>
+
+      <section className="statement" id="about">
+        <div>
+          <small>DESIGN APPROACH</small>
+          <p>
+            不只装饰一个空间，
+            <br />
+            而是设计一场<span>让品牌被记住</span>的直播。
+          </p>
+        </div>
+        <div className="statement-note">
+          <p>
+            从品牌特征、镜头关系到现场执行，视觉设计贯穿每一个观众能够感知的触点。
+          </p>
+          <dl>
+            <div>
+              <dt>策略</dt>
+              <dd>先理解品牌与直播内容</dd>
+            </div>
+            <div>
+              <dt>空间</dt>
+              <dd>为镜头建立层次与焦点</dd>
+            </div>
+            <div>
+              <dt>延展</dt>
+              <dd>保持主图与物料一致</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section className="work" id="work" aria-labelledby="work-title">
+        <header className="section-head">
+          <div>
+            <small>SELECTED WORK</small>
+            <h2 id="work-title">精选案例</h2>
+          </div>
+          <p>点击作品进入全屏，支持缩放、滑动与键盘浏览。</p>
+        </header>
+        <div className="project-grid">
+          {projects.map((project, index) => (
+            <ProjectSlider
+              key={project.slug}
+              project={project}
+              projectIndex={index}
+              onOpen={openLightbox}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="services" id="scope">
+        <div>
+          <small>SERVICE SCOPE</small>
+          <h2>
+            从直播间出发，
+            <br />
+            向每一个视觉触点延展。
+          </h2>
+        </div>
+        <ol>
+          <li>
+            <b>01</b>
+            <span>直播间视觉设计</span>
+            <em>场景 / 贴片 / 氛围 / 导播视觉</em>
+          </li>
+          <li>
+            <b>02</b>
+            <span>电商主图设计</span>
+            <em>产品主图 / 详情页 / 活动页</em>
+          </li>
+          <li>
+            <b>03</b>
+            <span>品牌物料延展</span>
+            <em>KT板 / 海报 / 展架 / 包装</em>
+          </li>
+          <li>
+            <b>04</b>
+            <span>视觉策略与统筹</span>
+            <em>风格定位 / 视觉规范 / 系统延展</em>
+          </li>
+        </ol>
+      </section>
+
+      <footer className="portfolio-footer">
+        <small>END OF SELECTED WORK</small>
+        <h2>
+          感谢观看
+          <br />
+          <span>THANK YOU.</span>
+        </h2>
+        <div className="footer-actions">
+          <a href="#top">返回顶部 ↑</a>
+          <button type="button" onClick={copyPortfolioLink}>
+            {portfolioCopied ? "作品集链接已复制 ✓" : "复制作品集链接"}
+          </button>
+        </div>
+        <div className="footer-meta">
+          <span>招财猫视觉设计</span>
+          <span>PRIVATE PORTFOLIO · PLEASE DO NOT REDISTRIBUTE</span>
+          <span>© 2026</span>
+        </div>
+      </footer>
+
+      <p className="sr-only" aria-live="polite">
+        {portfolioCopied ? "作品集链接已复制" : ""}
+      </p>
+
+      {lightbox ? (
+        <Lightbox
+          value={lightbox}
+          onChange={(index) => setLightbox({ ...lightbox, index })}
+          onClose={closeLightbox}
+        />
+      ) : null}
+    </main>
+  );
 }

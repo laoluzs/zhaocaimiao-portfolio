@@ -1,20 +1,27 @@
 # 招财猫｜直播间视觉设计作品集
 
-这是“招财猫”直播间视觉设计的官方网站与作品集，集中展示直播间场景设计、电商主图、品牌物料以及主题视觉案例。
+这是“招财猫”直播间视觉设计的私域作品集，用于向客户展示直播间场景、主题活动、电商主图与品牌视觉全案。
 
 ## 首页演示
 
 ▶️ [点击观看首页完整录屏](https://github.com/laoluzs/zhaocaimiao-portfolio/raw/main/docs/homepage-demo.mp4)
 
-> 录屏展示首页的实际视觉效果、动态人物视频以及案例浏览体验。
+> 录屏用于快速了解首页视觉；仓库中的网站版本会持续迭代。
 
-## 项目特色
+## 当前能力
 
-- 响应式单页作品集，适配桌面端和移动端
-- 展示儿童乐园、夏日玩水和黄色主题三组案例
-- 支持案例图片轮播、键盘操作和触摸交互
-- 包含动态人物视频、项目数据和服务介绍
-- 使用 Vinext 构建，可运行于 Node.js 或 Cloudflare Workers
+- 桌面端、平板与手机端响应式布局
+- 三组结构化案例数据，包含项目类型、目标、服务内容与设计亮点
+- 案例轮播、触摸滑动、方向键操作和浏览进度恢复
+- 全屏作品查看、图片缩放、键盘与手势切换
+- 当前案例独立分享地址与一键复制链接
+- AVIF、WebP、PNG 多格式响应式图片
+- 图片加载占位、下一张预加载及移动端视频按需播放
+- 首页视频播放、暂停和静音控制
+- 减少动态效果模式与基础无障碍支持
+- 私域展示水印、禁止图片拖拽和禁止搜索引擎收录
+- Open Graph 分享封面与中文分享信息
+- 自动构建、渲染、资源完整性和交互能力测试
 
 ## 技术栈
 
@@ -24,6 +31,7 @@
 - Vinext / Vite
 - Cloudflare Workers
 - Tailwind CSS 4
+- Sharp
 
 ## 环境要求
 
@@ -37,52 +45,48 @@ npm install
 npm run dev
 ```
 
-开发服务启动后，按照终端显示的本地地址访问网站。
-
-## 正式构建
+## 构建与检查
 
 ```bash
-npm run build
+npm run lint
+npm test
 ```
 
-构建产物会生成在 `dist/` 目录：
+`npm test` 会执行正式构建，并验证中文页面、隐私元数据、案例结构、响应式图片和关键交互能力。
 
-- `dist/client/`：浏览器静态资源
-- `dist/server/index.js`：服务器入口
-- `dist/server/wrangler.json`：Cloudflare Workers 配置
-
-## 生产环境运行
+## 素材优化
 
 ```bash
-npm start
+npm run media:optimize
 ```
 
-服务默认监听 `0.0.0.0:3000`，也可以通过 `PORT` 环境变量指定端口。生产服务器可以使用 Nginx、Caddy 或服务器面板反向代理到该端口。
-
-## 常用命令
-
-- `npm run dev`：启动本地开发服务
-- `npm run build`：生成正式构建产物
-- `npm start`：启动生产服务
-- `npm run lint`：检查代码规范
-- `npm run db:generate`：生成 Drizzle 数据库迁移
+该命令会根据 `public/projects/` 中的原始 PNG 生成 500px、1000px 两档 AVIF/WebP 图片，同时更新首页视频封面与社交分享封面。
 
 ## 主要目录
 
 ```text
-app/                 页面、布局和全局样式
-public/              图片、视频和网站图标
-worker/              Cloudflare Worker 入口
-db/                  数据库结构与访问层
-drizzle/             数据库迁移记录
-tests/               自动化测试
-.openai/hosting.json Sites 托管资源声明
+app/page.tsx             页面与交互
+app/portfolio-data.ts    案例内容数据
+app/globals.css          响应式视觉样式
+public/projects/         原始图片与优化版本
+public/og.png            分享封面
+scripts/optimize-media.mjs 素材优化脚本
+tests/                   自动化测试
+docs/homepage-demo.mp4   首页录屏
 ```
 
-## 部署说明
+## 分享指定案例
 
-项目当前未启用 D1 数据库或 R2 对象存储绑定。部署时需要保留完整的 `dist/` 目录，服务器应使用 Node.js 22.13.0 或更高版本。
+每个案例支持独立地址，并可附带当前图片序号：
 
-## 项目定位
+```text
+/#case-kids-1
+/#case-water-3
+/#case-yellow-6
+```
 
-以直播间设计为原点，通过空间视觉、电商主图和品牌物料设计，帮助品牌提升直播间辨识度、用户停留和内容转化。
+访问者打开后会定位到相应案例，并恢复对应图片。
+
+## 私域说明
+
+网站通过页面元数据和 `robots.txt` 禁止搜索引擎收录，并对展示图片增加低干扰水印。网页无法彻底阻止截图或二次传播，因此重要项目仍建议只向可信客户分享。

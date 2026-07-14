@@ -1,6 +1,6 @@
 {
-  "name": "site-creator-vinext-starter",
-  "version": "0.1.0",
+  "name": "zhaocaimiao-portfolio",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -10,8 +10,9 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "drizzle-kit generate"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern yes --ignore-pattern .vinext --ignore-pattern .wrangler",
+    "db:generate": "drizzle-kit generate",
+    "media:optimize": "node scripts/optimize-media.mjs"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -31,11 +32,17 @@
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "react-server-dom-webpack": "19.2.6",
+    "sharp": "0.34.5",
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
   },
-  "type": "module"
+  "type": "module",
+  "description": "招财猫直播间视觉设计私域作品集",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/laoluzs/zhaocaimiao-portfolio.git"
+  }
 }
