@@ -114,9 +114,12 @@ test("source keeps keyboard, touch, zoom, progress restore and reduced-motion be
   assert.match(page, /width: `\$\{zoom \* 100\}%`/);
   assert.doesNotMatch(page, /transform: `scale\(\$\{zoom\}\)`/);
   assert.match(css, /\.lightbox-image img\{object-fit:contain\}/);
-  assert.match(page, /saveData/);
   assert.match(page, /autoPlay/);
-  assert.doesNotMatch(page, /saveData \|\| window\.innerWidth/);
+  assert.match(page, /\s+muted/);
+  assert.match(page, /\s+loop/);
+  assert.match(page, /videoPausedByUser/);
+  assert.match(page, /visibilitychange/);
+  assert.doesNotMatch(page, /videoMuted|setVideoMuted/);
   assert.match(page, /draggable=\{false\}/);
   assert.match(page, /element\?\.complete && element\.naturalWidth > 0/);
   assert.match(page, /onError=\{\(\) => setLoadedImage\(image\)\}/);

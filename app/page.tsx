@@ -485,21 +485,22 @@ function Lightbox({
 export default function Home() {
   const [lightbox, setLightbox] = useState<LightboxState>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
-  const [videoMuted, setVideoMuted] = useState(true);
   const [portfolioCopied, setPortfolioCopied] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoPausedByUser = useRef(false);
   const lightboxTrigger = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-    if (reducedMotion.matches || saveData) {
-      videoRef.current?.pause();
-    } else {
-      videoRef.current?.play().catch(() => setVideoPlaying(false));
-    }
     const finePointer = window.matchMedia("(pointer: fine)");
-    if (!finePointer.matches || reducedMotion.matches) return;
+
+    const playVideo = () => {
+      if (videoPausedByUser.current) return;
+      videoRef.current?.play().catch(() => setVideoPlaying(false));
+    };
+    const handleVisibilityChange = () => {
+      if (!document.hidden) playVideo();
+    };
     const move = (event: MouseEvent) => {
       document.documentElement.style.setProperty(
         "--mx",
@@ -510,8 +511,19 @@ export default function Home() {
         `${(event.clientY / window.innerHeight - 0.5) * 12}px`,
       );
     };
-    window.addEventListener("mousemove", move, { passive: true });
-    return () => window.removeEventListener("mousemove", move);
+
+    playVideo();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", playVideo);
+    if (finePointer.matches && !reducedMotion.matches) {
+      window.addEventListener("mousemove", move, { passive: true });
+    }
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", playVideo);
+      window.removeEventListener("mousemove", move);
+    };
   }, []);
 
   useEffect(() => {
@@ -540,9 +552,16 @@ export default function Home() {
   };
 
   const toggleVideo = async () => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) await videoRef.current.play();
-    else videoRef.current.pause();
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      videoPausedByUser.current = false;
+      await video.play().catch(() => setVideoPlaying(false));
+    } else {
+      videoPausedByUser.current = true;
+      video.pause();
+    }
   };
 
   const copyPortfolioLink = async () => {
@@ -576,7 +595,7 @@ export default function Home() {
           <video
             ref={videoRef}
             className="hero-video"
-            muted={videoMuted}
+            muted
             autoPlay
             loop
             playsInline
@@ -657,12 +676,6 @@ export default function Home() {
         <div className="video-controls" aria-label="首页视频控制">
           <button type="button" onClick={toggleVideo}>
             {videoPlaying ? "暂停" : "播放"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setVideoMuted((current) => !current)}
-          >
-            {videoMuted ? "开启声音" : "静音"}
           </button>
           <span aria-live="polite">{videoPlaying ? "PLAYING" : "PAUSED"}</span>
         </div>
