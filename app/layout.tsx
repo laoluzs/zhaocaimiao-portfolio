@@ -1,19 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -24,8 +12,22 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost";
-  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const rawHost = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost";
+  const host = rawHost.split(",")[0].trim();
+  const forwardedProtocol = requestHeaders
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    .trim()
+    .toLowerCase();
+  const isLocalHost =
+    /^(localhost|127(?:\.\d{1,3}){3})(:\d+)?$/i.test(host) ||
+    /^\[::1\](?::\d+)?$/i.test(host);
+  const protocol =
+    forwardedProtocol === "http" || forwardedProtocol === "https"
+      ? forwardedProtocol
+      : isLocalHost
+        ? "http"
+        : "https";
   const origin = `${protocol}://${host}`;
   const title = "招财猫｜直播间视觉设计作品集";
   const description = "精选直播间场景、主题活动与品牌视觉全案，呈现从视觉策略到空间落地的完整设计作品。";
@@ -82,7 +84,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
         {children}
       </body>
     </html>

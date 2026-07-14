@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { access, readFile, readdir, stat } from "node:fs/promises";
 import test from "node:test";
 
-async function render(pathname = "/") {
+async function render(pathname = "/", requestHeaders = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${pathname}`);
   const { default: worker } = await import(workerUrl.href);
   return worker.fetch(
     new Request(`http://portfolio.local${pathname}`, {
-      headers: { accept: "text/html", host: "portfolio.local" },
+      headers: { accept: "text/html", host: "portfolio.local", ...requestHeaders },
     }),
     { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } },
     { waitUntil() {}, passThroughOnException() {} },
@@ -33,6 +33,15 @@ test("renders the finished Chinese portfolio with privacy and share metadata", a
   assert.doesNotMatch(html, /mailto:/);
 });
 
+test("keeps local preview resources on HTTP and never exposes filesystem font URLs", async () => {
+  const html = await (await render("/", { host: "127.0.0.1:3001" })).text();
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+
+  assert.match(html, /href="http:\/\/127\.0\.0\.1:3001\/favicon\.svg"/);
+  assert.doesNotMatch(html, /https:\/\/127\.0\.0\.1:3001/);
+  assert.doesNotMatch(html, /file:\/\/\//);
+  assert.doesNotMatch(layout, /next\/font/);
+});
 test("server-renders all structured cases and accessible navigation", async () => {
   const html = await (await render()).text();
   for (const [slug, title] of [
