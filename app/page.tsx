@@ -331,6 +331,7 @@ function Lightbox({
   const { project, index } = value;
   const [zoom, setZoom] = useState(1);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const zoomViewportRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef(0);
   const total = project.images.length;
 
@@ -368,6 +369,21 @@ function Lightbox({
       window.removeEventListener("keydown", onKeyDown);
     };
   });
+
+  useEffect(() => {
+    const viewport = zoomViewportRef.current;
+    if (!viewport) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      viewport.scrollTo({
+        left: Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2),
+        top: Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 2),
+        behavior: "auto",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [index, zoom]);
 
   return (
     <div
@@ -421,8 +437,11 @@ function Lightbox({
         </div>
       </header>
 
-      <div className={`lightbox-image ${zoom > 1 ? "is-zoomed" : ""}`}>
-        <div style={{ transform: `scale(${zoom})` }}>
+      <div
+        ref={zoomViewportRef}
+        className={`lightbox-image ${zoom > 1 ? "is-zoomed" : ""}`}
+      >
+        <div style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}>
           <ResponsiveProjectImage
             project={project}
             image={project.images[index]}

@@ -108,6 +108,11 @@ test("source keeps keyboard, touch, zoom, progress restore and reduced-motion be
   assert.match(page, /portfolio:scrollY/);
   assert.match(page, /navigator\.clipboard\.writeText/);
   assert.match(page, /Math\.min\(3/);
+  assert.match(page, /zoomViewportRef/);
+  assert.match(page, /viewport\.scrollTo/);
+  assert.match(page, /width: `\$\{zoom \* 100\}%`/);
+  assert.doesNotMatch(page, /transform: `scale\(\$\{zoom\}\)`/);
+  assert.match(css, /\.lightbox-image img\{object-fit:contain\}/);
   assert.match(page, /saveData/);
   assert.match(page, /draggable=\{false\}/);
   assert.match(page, /element\?\.complete && element\.naturalWidth > 0/);
