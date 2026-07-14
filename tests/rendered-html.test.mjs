@@ -58,6 +58,7 @@ test("server-renders all structured cases and accessible navigation", async () =
   assert.match(html, /按回车查看大图，使用左右方向键切换/);
   assert.match(html, /复制当前案例链接/);
   assert.match(html, /class="thumbnail-nav"/);
+  assert.match(html, /class="thumbnail-progress"/);
   assert.match(html, /class="project-pagination"/);
   assert.match(html, /查看大图/);
   assert.match(html, /width="1000" height="2000"/);
@@ -114,6 +115,8 @@ test("source keeps keyboard, touch, zoom, progress restore and reduced-motion be
   assert.doesNotMatch(page, /transform: `scale\(\$\{zoom\}\)`/);
   assert.match(css, /\.lightbox-image img\{object-fit:contain\}/);
   assert.match(page, /saveData/);
+  assert.match(page, /autoPlay/);
+  assert.doesNotMatch(page, /saveData \|\| window\.innerWidth/);
   assert.match(page, /draggable=\{false\}/);
   assert.match(page, /element\?\.complete && element\.naturalWidth > 0/);
   assert.match(page, /onError=\{\(\) => setLoadedImage\(image\)\}/);

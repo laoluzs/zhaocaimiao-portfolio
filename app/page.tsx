@@ -284,6 +284,10 @@ function ProjectSlider({
         ))}
       </div>
 
+      <div className="thumbnail-progress" aria-hidden="true">
+        <span style={{ width: `${((active + 1) / total) * 100}%` }} />
+      </div>
+
       <div className="project-story">
         <p>{project.summary}</p>
         <dl>
@@ -489,7 +493,7 @@ export default function Home() {
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-    if (reducedMotion.matches || saveData || window.innerWidth <= 800) {
+    if (reducedMotion.matches || saveData) {
       videoRef.current?.pause();
     } else {
       videoRef.current?.play().catch(() => setVideoPlaying(false));
@@ -573,6 +577,7 @@ export default function Home() {
             ref={videoRef}
             className="hero-video"
             muted={videoMuted}
+            autoPlay
             loop
             playsInline
             preload="metadata"
