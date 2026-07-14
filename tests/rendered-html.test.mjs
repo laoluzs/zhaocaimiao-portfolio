@@ -101,6 +101,9 @@ test("source keeps keyboard, touch, zoom, progress restore and reduced-motion be
   assert.match(page, /Math\.min\(3/);
   assert.match(page, /saveData/);
   assert.match(page, /draggable=\{false\}/);
+  assert.match(page, /element\?\.complete && element\.naturalWidth > 0/);
+  assert.match(page, /onError=\{\(\) => setLoadedImage\(image\)\}/);
+  assert.doesNotMatch(css, /\.project-image img\{[^}]*opacity:0/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /@media\(max-width:800px\)/);
   assert.match(data, /services:\s*\[/);

@@ -32,7 +32,23 @@ function ResponsiveProjectImage({
   sizes = "(max-width: 980px) 100vw, 33vw",
   onClick,
 }: ResponsiveProjectImageProps) {
-  const [loaded, setLoaded] = useState(false);
+  const [loadedImage, setLoadedImage] = useState<string | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const loaded = loadedImage === image;
+
+  useEffect(() => {
+    const element = imageRef.current;
+
+    // A cached image can finish before React hydrates and attaches onLoad.
+    // Checking `complete` keeps the first visible slide from remaining blank.
+    const frame = window.requestAnimationFrame(() => {
+      if (element?.complete && element.naturalWidth > 0) {
+        setLoadedImage(image);
+      }
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [image, project.slug]);
 
   return (
     <div className={`project-image ${loaded ? "is-loaded" : "is-loading"}`}>
@@ -49,6 +65,7 @@ function ResponsiveProjectImage({
         />
         {/* The original PNG remains the compatibility fallback. */}
         <img
+          ref={imageRef}
           src={projectImagePath(project, image)}
           width={1000}
           height={2000}
@@ -57,7 +74,8 @@ function ResponsiveProjectImage({
           fetchPriority={eager ? "high" : "auto"}
           decoding="async"
           draggable={false}
-          onLoad={() => setLoaded(true)}
+          onLoad={() => setLoadedImage(image)}
+          onError={() => setLoadedImage(image)}
           onClick={onClick}
           onContextMenu={(event) => event.preventDefault()}
         />
