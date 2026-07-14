@@ -1,98 +1,82 @@
-# vinext-starter
+# 招财猫｜直播间视觉设计作品集
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+这是“招财猫”直播间视觉设计的官方网站与作品集，集中展示直播间场景设计、电商主图、品牌物料以及主题视觉案例。
 
-## Prerequisites
+## 项目特色
 
-- Node.js `>=22.13.0`
+- 响应式单页作品集，适配桌面端和移动端
+- 展示儿童乐园、夏日玩水和黄色主题三组案例
+- 支持案例图片轮播、键盘操作和触摸交互
+- 包含动态人物视频、项目数据和服务介绍
+- 使用 Vinext 构建，可运行于 Node.js 或 Cloudflare Workers
 
-## Quick Start
+## 技术栈
+
+- Next.js 16
+- React 19
+- TypeScript
+- Vinext / Vite
+- Cloudflare Workers
+- Tailwind CSS 4
+
+## 环境要求
+
+- Node.js 22.13.0 或更高版本
+- npm
+
+## 本地开发
 
 ```bash
 npm install
 npm run dev
+```
+
+开发服务启动后，按照终端显示的本地地址访问网站。
+
+## 正式构建
+
+```bash
 npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+构建产物会生成在 `dist/` 目录：
 
-## Included Shape
+- `dist/client/`：浏览器静态资源
+- `dist/server/index.js`：服务器入口
+- `dist/server/wrangler.json`：Cloudflare Workers 配置
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+## 生产环境运行
 
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm start
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+服务默认监听 `0.0.0.0:3000`，也可以通过 `PORT` 环境变量指定端口。生产服务器可以使用 Nginx、Caddy 或服务器面板反向代理到该端口。
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## 常用命令
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+- `npm run dev`：启动本地开发服务
+- `npm run build`：生成正式构建产物
+- `npm start`：启动生产服务
+- `npm run lint`：检查代码规范
+- `npm run db:generate`：生成 Drizzle 数据库迁移
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+## 主要目录
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+```text
+app/                 页面、布局和全局样式
+public/              图片、视频和网站图标
+worker/              Cloudflare Worker 入口
+db/                  数据库结构与访问层
+drizzle/             数据库迁移记录
+tests/               自动化测试
+.openai/hosting.json Sites 托管资源声明
+```
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## 部署说明
 
-## Useful Commands
+项目当前未启用 D1 数据库或 R2 对象存储绑定。部署时需要保留完整的 `dist/` 目录，服务器应使用 Node.js 22.13.0 或更高版本。
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+## 项目定位
 
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+以直播间设计为原点，通过空间视觉、电商主图和品牌物料设计，帮助品牌提升直播间辨识度、用户停留和内容转化。
