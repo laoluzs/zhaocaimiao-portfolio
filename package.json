@@ -9,10 +9,11 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run typecheck && npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern yes --ignore-pattern .vinext --ignore-pattern .wrangler",
     "db:generate": "drizzle-kit generate",
-    "media:optimize": "node scripts/optimize-media.mjs"
+    "media:optimize": "node scripts/optimize-media.mjs",
+    "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
+    "@cloudflare/workers-types": "4.20260702.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",

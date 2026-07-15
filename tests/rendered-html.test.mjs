@@ -42,6 +42,20 @@ test("keeps local preview resources on HTTP and never exposes filesystem font UR
   assert.doesNotMatch(html, /file:\/\/\//);
   assert.doesNotMatch(layout, /next\/font/);
 });
+test("uses the configured HTTP origin for public sharing metadata", async () => {
+  const previousOrigin = process.env.PUBLIC_SITE_URL;
+  process.env.PUBLIC_SITE_URL = "http://43.159.170.226:3000";
+
+  try {
+    const html = await (await render("/", { host: "untrusted.example" })).text();
+    assert.match(html, /property="og:url" content="http:\/\/43\.159\.170\.226:3000"/);
+    assert.match(html, /property="og:image" content="http:\/\/43\.159\.170\.226:3000\/og\.png"/);
+    assert.doesNotMatch(html, /https:\/\/43\.159\.170\.226:3000/);
+  } finally {
+    if (previousOrigin === undefined) delete process.env.PUBLIC_SITE_URL;
+    else process.env.PUBLIC_SITE_URL = previousOrigin;
+  }
+});
 test("server-renders all structured cases and accessible navigation", async () => {
   const html = await (await render()).text();
   for (const [slug, title] of [
@@ -108,7 +122,12 @@ test("source keeps keyboard, touch, zoom, progress restore and reduced-motion be
   assert.match(page, /sessionStorage\.setItem/);
   assert.match(page, /portfolio:scrollY/);
   assert.match(page, /navigator\.clipboard\.writeText/);
+  assert.match(page, /Promise<boolean>/);
+  assert.match(page, /return document\.execCommand\("copy"\)/);
+  assert.match(page, /复制失败，请手动复制/);
   assert.match(page, /Math\.min\(3/);
+  assert.match(page, /const go = useCallback/);
+  assert.match(page, /if \(zoom > 1\) return/);
   assert.match(page, /zoomViewportRef/);
   assert.match(page, /viewport\.scrollTo/);
   assert.match(page, /width: `\$\{zoom \* 100\}%`/);

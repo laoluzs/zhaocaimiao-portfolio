@@ -10,6 +10,20 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
+function configuredPublicOrigin(): string | null {
+  const value = process.env.PUBLIC_SITE_URL?.trim();
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:"
+      ? url.origin
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const rawHost = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost";
@@ -28,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
       : isLocalHost
         ? "http"
         : "https";
-  const origin = `${protocol}://${host}`;
+  const origin = configuredPublicOrigin() ?? `${protocol}://${host}`;
   const title = "招财猫｜直播间视觉设计作品集";
   const description = "精选直播间场景、主题活动与品牌视觉全案，呈现从视觉策略到空间落地的完整设计作品。";
 

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -14,6 +15,7 @@ import {
 } from "./portfolio-data";
 
 type LightboxState = { project: PortfolioProject; index: number } | null;
+type CopyStatus = "idle" | "success" | "error";
 
 type ResponsiveProjectImageProps = {
   project: PortfolioProject;
@@ -99,17 +101,30 @@ function getStoredSlide(slug: string, total: number) {
   return Number.isInteger(stored) && stored >= 0 && stored < total ? stored : 0;
 }
 
-async function copyToClipboard(value: string) {
+async function copyToClipboard(value: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(value);
+    if (window.isSecureContext && navigator.clipboard) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
   } catch {
-    const input = document.createElement("textarea");
-    input.value = value;
-    input.style.position = "fixed";
-    input.style.opacity = "0";
-    document.body.appendChild(input);
+    // Fall back to the legacy copy command when clipboard permission is denied.
+  }
+
+  const input = document.createElement("textarea");
+  input.value = value;
+  input.readOnly = true;
+  input.style.position = "fixed";
+  input.style.opacity = "0";
+  document.body.appendChild(input);
+
+  try {
+    input.focus({ preventScroll: true });
     input.select();
-    document.execCommand("copy");
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
     input.remove();
   }
 }
@@ -126,7 +141,7 @@ function ProjectSlider({
   const previousProject = projects[(projectIndex - 1 + projects.length) % projects.length];
   const nextProject = projects[(projectIndex + 1) % projects.length];
   const [active, setActive] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
   const startX = useRef(0);
   const didSwipe = useRef(false);
 
@@ -153,10 +168,10 @@ function ProjectSlider({
   const shareCurrent = async () => {
     const url = `${window.location.origin}${window.location.pathname}${window.location.search}#case-${project.slug}-${active + 1}`;
     window.history.replaceState(null, "", `#case-${project.slug}-${active + 1}`);
-    await copyToClipboard(url);
+    const success = await copyToClipboard(url);
 
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+    setCopyStatus(success ? "success" : "error");
+    window.setTimeout(() => setCopyStatus("idle"), 2200);
   };
 
   const onViewportKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -306,7 +321,11 @@ function ProjectSlider({
         </dl>
         <div className="project-actions">
           <button type="button" onClick={shareCurrent}>
-            {copied ? "链接已复制 ✓" : "复制当前案例链接"}
+            {copyStatus === "success"
+              ? "链接已复制 ✓"
+              : copyStatus === "error"
+                ? "复制失败，请手动复制"
+                : "复制当前案例链接"}
           </button>
           <div className="highlight-tags" aria-label="设计亮点">
             {project.highlights.map((highlight) => (
@@ -339,15 +358,25 @@ function Lightbox({
   const touchStartX = useRef(0);
   const total = project.images.length;
 
-  const go = (next: number) => {
-    setZoom(1);
-    onChange((next + total) % total);
-  };
+  const go = useCallback(
+    (next: number) => {
+      setZoom(1);
+      onChange((next + total) % total);
+    },
+    [onChange, total],
+  );
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
       if (event.key === "ArrowLeft") go(index - 1);
@@ -367,12 +396,10 @@ function Lightbox({
         }
       }
     };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  });
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [go, index, onClose]);
 
   useEffect(() => {
     const viewport = zoomViewportRef.current;
@@ -402,6 +429,7 @@ function Lightbox({
         touchStartX.current = event.touches[0].clientX;
       }}
       onTouchEnd={(event) => {
+        if (zoom > 1) return;
         const distance = event.changedTouches[0].clientX - touchStartX.current;
         if (Math.abs(distance) > 55) go(index + (distance < 0 ? 1 : -1));
       }}
@@ -485,7 +513,7 @@ function Lightbox({
 export default function Home() {
   const [lightbox, setLightbox] = useState<LightboxState>(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
-  const [portfolioCopied, setPortfolioCopied] = useState(false);
+  const [portfolioCopyStatus, setPortfolioCopyStatus] = useState<CopyStatus>("idle");
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoPausedByUser = useRef(false);
   const lightboxTrigger = useRef<HTMLElement | null>(null);
@@ -566,9 +594,9 @@ export default function Home() {
 
   const copyPortfolioLink = async () => {
     const url = `${window.location.origin}${window.location.pathname}`;
-    await copyToClipboard(url);
-    setPortfolioCopied(true);
-    window.setTimeout(() => setPortfolioCopied(false), 1800);
+    const success = await copyToClipboard(url);
+    setPortfolioCopyStatus(success ? "success" : "error");
+    window.setTimeout(() => setPortfolioCopyStatus("idle"), 2200);
   };
 
   return (
@@ -774,7 +802,11 @@ export default function Home() {
         <div className="footer-actions">
           <a href="#top">返回顶部 ↑</a>
           <button type="button" onClick={copyPortfolioLink}>
-            {portfolioCopied ? "作品集链接已复制 ✓" : "复制作品集链接"}
+            {portfolioCopyStatus === "success"
+              ? "作品集链接已复制 ✓"
+              : portfolioCopyStatus === "error"
+                ? "复制失败，请手动复制"
+                : "复制作品集链接"}
           </button>
         </div>
         <div className="footer-meta">
@@ -785,7 +817,11 @@ export default function Home() {
       </footer>
 
       <p className="sr-only" aria-live="polite">
-        {portfolioCopied ? "作品集链接已复制" : ""}
+        {portfolioCopyStatus === "success"
+          ? "作品集链接已复制"
+          : portfolioCopyStatus === "error"
+            ? "复制失败，请手动复制"
+            : ""}
       </p>
 
       {lightbox ? (
